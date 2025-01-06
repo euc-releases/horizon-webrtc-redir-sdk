@@ -5,6 +5,8 @@ The `HorizonWebRtcRedirectionAPI` provides a set of tools to enable WebRTC redir
 
 ## Installation
 
+Once your .npmrc file is setup you can install the package as follows:
+
 Install via command line
 ```
 npm install @euc-releases/horizon-webrtc-redir-sdk@8.14.0
