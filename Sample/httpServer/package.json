@@ -1,0 +1,13 @@
+{
+   "name": "Simple-Http-Server",
+   "description": "Simple Http Server for Webrtc SDK sample app",
+   "version": "0.0.1",
+   "private": false,
+   "dependencies": {
+      "express": "^4.17.1",
+      "fs": "0.0.1-security"
+   },
+   "scripts": {
+      "start": "node httpServer.js"
+   }
+}

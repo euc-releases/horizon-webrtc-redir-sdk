@@ -1,0 +1,85 @@
+{
+   "name": "horizonwebrtcredirsample",
+   "version": "1.0.0",
+   "description": "Simple App to test WebRTC Redirecion SDK.",
+   "main": "main.js",
+   "scripts": {
+      "start": "electron-forge start",
+      "test": "test",
+      "package": "electron-forge package",
+      "make": "electron-forge make",
+      "build": "electron-builder"
+   },
+   "build": {
+      "appId": "Horizon Sample Electron App",
+      "productName": "HorizonWebRTCRedirApp",
+      "win": {
+         "target": [
+            "nsis"
+         ],
+         "icon": "resource/horizon_icon.ico"
+      },
+      "nsis": {
+         "oneClick": false,
+         "installerIcon": "resource/horizon_icon.ico",
+         "uninstallerIcon": "resource/horizon_icon.ico",
+         "uninstallDisplayName": " Sample Electron App Uninstaller",
+         "license": "resource/license.md",
+         "allowToChangeInstallationDirectory": true
+      },
+      "extraFiles": [
+         "serverInfo.json",
+         {
+            "from": "node_modules/regedit/vbs",
+            "to": "regedit/vbs",
+            "filter": [
+               "**/*"
+            ]
+         }
+      ]
+   },
+   "author": "Benrui She",
+   "license": "ISC",
+   "devDependencies": {
+      "@electron-forge/cli": "^6.0.0-beta.61",
+      "@electron-forge/maker-deb": "^6.0.0-beta.61",
+      "@electron-forge/maker-rpm": "^6.0.0-beta.61",
+      "@electron-forge/maker-squirrel": "^6.0.0-beta.61",
+      "@electron-forge/maker-zip": "^6.0.0-beta.61",
+      "electron": "15.1.2",
+      "electron-builder": "^23.1.0"
+   },
+   "dependencies": {
+      "electron-squirrel-startup": "^1.0.0",
+      "express": "^4.17.2",
+      "regedit": "^5.0.0",
+      "tasklist": "3.1.1"
+   },
+   "config": {
+      "forge": {
+         "packagerConfig": {},
+         "makers": [
+            {
+               "name": "@electron-forge/maker-squirrel",
+               "config": {
+                  "name": "redirsdktestapp"
+               }
+            },
+            {
+               "name": "@electron-forge/maker-zip",
+               "platforms": [
+                  "darwin"
+               ]
+            },
+            {
+               "name": "@electron-forge/maker-deb",
+               "config": {}
+            },
+            {
+               "name": "@electron-forge/maker-rpm",
+               "config": {}
+            }
+         ]
+      }
+   }
+}

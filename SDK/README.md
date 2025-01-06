@@ -1,17 +1,18 @@
-# **Horizon WebRTC Redirection API**
+# **Horizon WebRTC Redirection SDK**
 
 ## **Overview**
 The `HorizonWebRtcRedirectionAPI` provides a set of tools to enable WebRTC redirection features for Horizon environments. It supports peer connections, media stream management, device enumeration, and screen sharing functionalities.
 
 ## Installation
+
 Install via command line
 ```
-npm install @euc-releases/horizon-webrtc-redir-sdk@1.0.0
+npm install @euc-releases/horizon-webrtc-redir-sdk@8.14.0
 ```
 
 Install via package.json:
 ```
-"@euc-releases/horizon-webrtc-redir-sdk": "1.0.0"
+"@euc-releases/horizon-webrtc-redir-sdk": "8.14.0"
 ```
 
 ## **Requirements**
@@ -58,15 +59,6 @@ These functions ensure that the necessary client information (window handle, cli
 
 Please refer to the sample application for example code and use cases.
 
-
-## **Installation**
-
-### Script Tag
-Include the API directly in your HTML:
-
-```html
-<script src="path/to/HorizonSDKforWebRTCRedir.js"></script>
-```
 
 ## **API Reference**
 
@@ -176,14 +168,6 @@ Sets the preferred screen for sharing.
 
 ---
 
-#### `onTitleChanged(title)`
-Updates the window title for tracking purposes.
-
-**Parameters**:
-- `title` *(String)*: The updated title of the web page.
-
----
-
 #### `onWindowSessionConnected(state)`
 Handles Windows session state changes (e.g., lock/unlock).
 
@@ -288,3 +272,25 @@ Sets the preferred screen for sharing.
 
 **Parameters**:
 - `screenId` *(String)*: ID of the selected screen.
+
+
+# **Horizon WebRTC Redirection Extension API**
+
+## **Overview**
+The `HorizonWebRTCExtension` provides two getters for values needed by the WebApp use case. These functions should only be used to set the required windows functions used by the SDK.
+
+## **API Reference**
+
+#### `getHorizonClientID()`
+Retrieves the ClientID from the html5server.
+
+**Returns**: *(Promise)* A promise that will resolve with the ClientID as a string
+
+---
+
+#### `getHorizonWSSPort()`
+Retrieves the wss port from the html5server needed for websocket communication
+
+**Returns**: *(Promise)* Resolves with the wss port as a string.
+
+---

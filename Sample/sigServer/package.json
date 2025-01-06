@@ -1,0 +1,15 @@
+{
+	"name": "Simple-WSS-Server",
+	"description": "Simple WSS Server for Signaling",
+	"version": "0.0.1",
+	"private": false,
+	"dependencies": {
+		"express": "^4.17.1",
+		"fs": "0.0.1-security",
+		"websocket": "^1.0.34",
+		"ws": "^8.1.0"
+	},
+	"scripts": {
+		"start": "node sigServer.js"
+	}
+}
