@@ -19,9 +19,22 @@ You will need to create a github token and either authenticate directly or use a
 
 ## Import and use
 
+### Import from NPM directly
 ```
 const horizonWebRtcRedir = require('@euc-releases/horizon-webrtc-redir-sdk');
 
 extAPI = horizonWebRtcRedir.HorizonWebRTCExtension
 HorizonRedirSDK = horizonWebRtcRedir.HorizonWebRtcRedirectionAPI
 ```
+### Copy files from modules
+
+Grab `HorizonSDKforWebRTCRedir.js` and `HorizonWebRTCExtension.js` from your node_modules folder and copy them to the sample apps sdk folder as instructed.
+
+```
+node_modules\@euc-releases\horizon-webrtc-redir-sdk
+```
+## License
+
+This software is licensed under the [Omnissa Software Development Kit (SDK) License Agreement](https://static.omnissa.com/sites/default/files/omnissa-sdk-agreement.pdf); you may not use this software except in compliance with the License.
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
