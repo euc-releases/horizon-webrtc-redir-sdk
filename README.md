@@ -38,3 +38,7 @@ node_modules\@euc-releases\horizon-webrtc-redir-sdk
 This software is licensed under the [Omnissa Software Development Kit (SDK) License Agreement](https://static.omnissa.com/sites/default/files/omnissa-sdk-agreement.pdf); you may not use this software except in compliance with the License.
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+## Support
+
+If there is a partner program or Certification Program related to the Software, then Omnissa may, but is not obligated to, provide you with limited support services for the Software in accordance with the terms of those programs. Otherwise, you are not entitled under this Agreement to receive any Omnissa support or subscription services for the Software or any other services from Omnissa in connection with the Software. … If you have purchased support and/or subscription services for an Omnissa product, such support and/or subscription services shall not apply to the Software or your use of the Software other than as provided in any relevant Certification Program.
