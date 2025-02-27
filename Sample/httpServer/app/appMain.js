@@ -12,6 +12,8 @@ var Demo = Demo || function() {
    var wssPortNumber;
    var clientID;
    var maxNumOfCallConfigs = 3;
+   var isWindowMaximized = false;
+   var topFrameTitle;
 
    const HorizonAgentEventCallback = function(evt) {
       let event = evt.event;
@@ -72,6 +74,12 @@ var Demo = Demo || function() {
       }
    };
 
+   var handleWindowInfo = function(windowInfo) {
+      if (windowInfo.isMaximized !== undefined) {
+         isWindowMaximized = windowInfo.isMaximized;
+      }
+   };
+
    var initStandaloneApp = function() {
       navigator.mediaDevices.getDisplayMedia = async () => {
          const selectedSource = await globalThis.electronGetDisplayMedia();
@@ -105,6 +113,16 @@ var Demo = Demo || function() {
          return Promise.resolve(portNumber);
       };
 
+
+      window.getZoomFactor = function(video) {
+         const clientWidth =  document.body && document.body.clientWidth
+                            ? document.body.clientWidth
+                            : innerWidth;
+         const { innerWidth, outerWidth } = window;
+         const borderWidth = isWindowMaximized ? 0 : innerWidth - clientWidth;
+         return Math.round(((outerWidth - borderWidth) / innerWidth) * 1000) / 1000;
+      }
+
       WebRTCRedirApp = {
          callServerUrl: "",
          HorizonRedirSDK: window.HorizonWebRtcRedirectionAPI,
@@ -119,8 +137,11 @@ var Demo = Demo || function() {
       window.api.receive("fromMain", (data) => {
          let event = JSON.parse(data);
          switch (event.type) {
-            case "envInfo":
+            case 'envInfo':
                handleEnvInfo(event);
+               break;
+            case 'windowInfo':
+               handleWindowInfo(event);
                break;
             default:
                console.log("App Main ===> unknow event from app:" + event.type);
@@ -161,6 +182,30 @@ var Demo = Demo || function() {
          }
       };
 
+      window.getHorizonWindowTitle = function () {
+         if (window.top === window.self) {
+            // top level casse
+            return document.title
+         } else {
+            // iframe case.
+            if (topFrameTitle) {
+               return topFrameTitle;
+            }
+            // Post message to top level.
+            window.top.postMessage({from: 'horizon-iframe', cmd:'getHorizonWindowTitle'}, '*');
+            return undefined;
+         }
+      }
+
+      window.onmessage = function(e) {
+         // handle communication between iframe and parent
+         console.log(`Received message ${e.data}`);
+         if (e.data && e.data.topFrameTitle) {
+            topFrameTitle = e.data.topFrameTitle;
+         }
+      }
+
+
       // Place holder for web environment
       WebRTCRedirApp = {
          HorizonRedirSDK: window.HorizonWebRtcRedirectionAPI,
@@ -182,11 +227,12 @@ var Demo = Demo || function() {
           * that gets fired by the browser extension.
           */
          window.HorizonWebRTCExtension.onWindowSessionConnected = function(connected) {
-            // Simply log the connected state now.
+            // Notify SDK about the change in order to trigger a reconnect
             console.log('onWindowSessionConnected:' + connected);
+            window.WebRTCRedirApp.HorizonRedirSDK.onWindowSessionConnected(connected);
          }
       }
-      
+
 
       window.WebRTCRedirApp = WebRTCRedirApp;
       WebRTCRedirApp.ui.init(maxNumOfCallConfigs);

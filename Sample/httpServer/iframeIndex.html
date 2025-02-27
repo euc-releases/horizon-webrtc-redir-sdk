@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Webrtc Sample - iFrame </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        iframe {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="urlInput" value="https://jvc1:3000/webIndex.html?callServerUrl=wss://jvc1:8443">
+    <button onclick="loadIframe()">Load</button>
+    <iframe id="displayFrame"></iframe>
+
+    <script>
+      let iframe;
+      function loadIframe() {
+         const url = document.getElementById('urlInput').value;
+         iframe = document.getElementById('displayFrame');
+         iframe.onload = () => {
+            console.log('iframe loaded');
+         }
+         iframe.src = url;
+      }
+
+      window.onload = loadIframe;
+      window.onmessage = function(e) {
+      if (iframe && e.data.from === 'horizon-iframe' && e.data.cmd === 'getHorizonWindowTitle') {
+         iframe.contentWindow.postMessage({ topFrameTitle: document.title} , '*');
+      }
+      }
+
+    </script>
+</body>
+</html>

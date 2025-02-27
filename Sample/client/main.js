@@ -25,8 +25,9 @@ app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('ignore-certificate-errors');
 app.commandLine.appendSwitch('disable-gpu');
 
-let wssPortRegistryPath = 'HKCU\\Software\\Omnissa\\Horizon\\HTML5 Redirection Server\\';
-let clientIDRegistryPath = 'HKCU\\Volatile Environment\\';
+let gWssPortRegistryPath = 'HKCU\\Software\\Omnissa\\Horizon\\HTML5 Redirection Server\\';
+let gLegacyWssPortRegistryPath = 'HKCU\\Software\\VMware, Inc.\\HTML5 Redirection Server\\';
+let gClientIDRegistryPath = 'HKCU\\Volatile Environment\\';
 
 const OSType = os.platform();
 
@@ -75,9 +76,9 @@ async function createWindow () {
          }
       }
 
-      let _clientIDRegistryPath = clientIDRegistryPath + sessionId.toString();
+      let clientIDRegistryPath = gClientIDRegistryPath + sessionId.toString();
       try {
-         regedit.list(_clientIDRegistryPath, function(err, result) {
+         regedit.list(clientIDRegistryPath, function(err, result) {
             if (!result && err.stdout) {
                let _p = err.stdout.indexOf('ViewClient_Client_ID');
                let tmpStr = err.stdout.substring(_p);
@@ -87,8 +88,8 @@ async function createWindow () {
                tmpStr = tmpStr.substring(0, _p);
                clientID = tmpStr.split('"')[2];
             } else if (result) {
-               if (result[_clientIDRegistryPath] || result[_clientIDRegistryPath].exists) {
-                  let clientIDInfo = result[_clientIDRegistryPath].values.ViewClient_Client_ID;
+               if (result[clientIDRegistryPath] || result[clientIDRegistryPath].exists) {
+                  let clientIDInfo = result[clientIDRegistryPath].values.ViewClient_Client_ID;
                   if (clientIDInfo) {
                      clientID = clientIDInfo.value;
                   }
@@ -99,6 +100,13 @@ async function createWindow () {
          console.log("Main process ===> Could not read registry. Maybe not in VDI env.");
       }
    }
+
+   // Update browser window maximized state
+   win.on('resize', function() {
+      let windowInfo = { type: 'windowInfo'};
+      windowInfo.isMaximized = win.isMaximized();
+      win.webContents.send("fromMain", JSON.stringify(windowInfo));      
+   });
 }
 
 
@@ -118,19 +126,32 @@ ipcMain.on("toMain", (event, args) => {
 });
 
 
-const getWssPortInfo = function() {
+const getWssPortHelper = function(portRegPath) {
    let p = new Promise(function(resolve, reject) {
-      let _wssPortRegistryPath = wssPortRegistryPath + sessionId.toString();
-      let _clientIDRegistryPath = clientIDRegistryPath + sessionId.toString();
-      regedit.list(_wssPortRegistryPath, function(err, result) {
-         if (result && (result[_wssPortRegistryPath] || result[_wssPortRegistryPath].exists)) {
-            resolve(result[_wssPortRegistryPath].values);
+      console.log('getWssPortHelper start to get wssport from root:' + portRegPath);
+      let regPath = portRegPath ? portRegPath : gWssPortRegistryPath;
+      let wssPortRegistryPath = regPath + sessionId.toString();
+      regedit.list(wssPortRegistryPath, function(err, result) {
+         if (result && (result[wssPortRegistryPath] && result[wssPortRegistryPath].exists)) {
+            console.log(`getWssPortHelper get wssport:${wssPortRegistryPath} value:${JSON.stringify(result[wssPortRegistryPath])}`);
+            resolve(result[wssPortRegistryPath].values);
          } else {
+            console.log('getWssPortHelper failed to get wssport:' + wssPortRegistryPath);
             reject(err);
          }
       });
    });
    return p;
+};
+
+const getWssPortInfo = function() {
+   return new Promise(function(resolve, reject){
+      getWssPortHelper(gWssPortRegistryPath)
+         .then((r)=>resolve(r))
+         .catch((e)=>getWssPortHelper(gLegacyWssPortRegistryPath))
+         .then((r)=>resolve(r))
+         .catch((e)=>reject(e));
+   });
 };
 
 
