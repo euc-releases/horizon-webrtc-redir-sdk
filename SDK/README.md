@@ -9,12 +9,12 @@ Once your .npmrc file is setup you can install the package as follows:
 
 Install via command line
 ```
-npm install @euc-releases/horizon-webrtc-redir-sdk@8.14.0
+npm install @euc-releases/horizon-webrtc-redir-sdk@8.15.0
 ```
 
 Install via package.json:
 ```
-"@euc-releases/horizon-webrtc-redir-sdk": "8.14.0"
+"@euc-releases/horizon-webrtc-redir-sdk": "8.15.0"
 ```
 
 ## **Requirements**
