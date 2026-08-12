@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon WebRTC SDK Load iframe from third party dynamically</title>
+    <style>
+        body {
+            background: #f7f9fa;
+            /*font-family: 'Segoe UI', Arial, sans-serif;*/
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            /*max-width: 1200px;*/
+            min-width: 320px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 32px 28px 24px 28px;
+        }
+        .title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #4682b4;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+            text-align: left;
+        }
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 22px;
+        }
+        .item-checkbox {
+            margin-right: 14px;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .item-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .item-label {
+            font-size: 1.08em;
+            font-weight: 500;
+            color: #222;
+            margin-bottom: 6px;
+        }
+        .item-desc {
+            color: #555;
+            font-size: 1em;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px 14px;
+            border: 1px solid #e0e0e0;
+            min-height: 32px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .footer {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 0.95em;
+            color: #aaa;
+        }
+        .bullet-list {
+            margin: 8px 0 0 18px;
+            padding: 0;
+            list-style-type: square;
+        }
+        .registry-section {
+            margin: 8px 0 8px 0;
+            padding: 8px;
+            background: #f0f4fa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .iframe-container {
+            position: relative;
+            min-width: 100%;
+            min-height: calc(100vh - 200px);
+            border: 2px dashed #ccc;
+            background-color: #fafafa;
+            overflow: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        iframe {
+            position: absolute;
+            border: 0px solid #007BFF;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+   <!-- <div class="container">
+      <div class="title">Horizon WebRTC SDK Example: WebRTC SDK consumed by both top level and iframe</div>
+   </div> -->
+   <div class="item" style="margin-bottom: 28px; align-items: center;">
+      <div class="item-content" style="width:100%; flex-direction: row; align-items: center; display: flex;">
+         <label for="urlInput" class="item-label" style="font-size:1.08em;font-weight:500;color:#4682b4;margin-right:16px;min-width:48px;">URL:</label>
+         <input type="text" id="urlInput"
+            value="https://jvc1:3000/webIndex.html?callServerUrl=wss://jvc1:8443&allowNullHandle=true"
+            style="flex:1;padding:10px 14px;font-size:1em;border-radius:7px;border:1px solid #e0e0e0;background:#f7f9fa;color:#222;box-sizing:border-box;outline:none;transition:border-color 0.2s;min-width:220px;"
+            onfocus="this.style.borderColor='#4682b4'" onblur="this.style.borderColor='#e0e0e0'"
+         >
+      </div>
+   </div>
+   <div class="iframe-container" id="iframe-container">
+      <iframe id="displayFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:white;"></iframe>
+   </div>
+   <div class="footer">
+      <!--&copy; 2025 Omnissa, LLC. All rights reserved.-->
+   </div>
+
+   <script src="sdk/HorizonWebRTCExtension.js"></script>
+   <script src="sdk/HorizonSDKforWebRTCRedir.js" > </script>
+   <script>
+   var _iframe = document.getElementById('displayFrame');
+   function loadIframe() {
+      const url = document.getElementById('urlInput').value;
+      _iframe = document.getElementById('displayFrame');
+      _iframe.onload = () => {
+         console.log('iframe loaded');
+         // applyPosition();
+      }
+      _iframe.onerror = () => {
+         console.error('Failed to load iframe:', url);
+      }
+      _iframe.src = url;
+   }
+
+   var HorizonConnect = function () {
+      var _pollInterval;
+      var _pollLimit = 10;
+
+      var startConnectToHorizonAgent = function () {
+         return new Promise(function (resolve, reject) {
+            if (!window.HorizonWebRTCExtension || !window.HorizonWebRTCExtension.getHorizonClientID) {
+               reject('Horizon extension is not found');
+               return;
+            }
+            _pollInterval = setInterval(function() {
+               pollHorizonClientId(resolve, reject);
+               _pollLimit--;
+            }, 500);
+         });
+      }
+      var pollHorizonClientId = function (resolve, reject) {
+         window.HorizonWebRTCExtension.getHorizonClientID().then(clientId => {
+            resolve(clientId);
+            clearInterval(_pollInterval);
+         }).catch(error => {
+            if (_pollLimit <= 0) {
+               reject('Poll limit reached.')
+               clearInterval(_pollInterval);
+            }
+         })
+      }
+      var startConnectToClient = function(callback) {
+         window.getHorizonClientID = async () => {
+            if (window.HorizonWebRTCExtension) {
+               return window.HorizonWebRTCExtension.getHorizonClientID();
+            } else {
+               return Promise.reject('Fail to get horizon client ID');
+            }
+         };
+
+         window.getHorizonWSSPort = async () => {
+            if (window.HorizonWebRTCExtension) {
+               return window.HorizonWebRTCExtension.getHorizonWSSPort();
+            } else {
+               return Promise.reject('Fail to get horizon WSS port');
+            }
+         };
+
+         window.getHorizonWindowTitle = function () {
+            return document.title;
+         }
+
+         window.HorizonRedirSDK = window.HorizonWebRtcRedirectionAPI;   // Creates alias.
+         var sdkConfig = { allowNullHandle:true, simpleDisconnectOnError:true };
+         window.HorizonRedirSDK.initSDK(null, "", callback, sdkConfig);
+      }
+
+      // Exposes methods.
+      this.startConnectToHorizonAgent = startConnectToHorizonAgent;
+      this.startConnectToClient = startConnectToClient;
+   }
+
+   var hcEventCallback = async function(evt) {
+      let event = evt?.event;
+      if (!event) {
+         return;
+      }
+      
+      console.log('===> get event from WebRTCRedirSDK: ' + event);
+      switch(event) {
+         case 'vdiClientConnected':
+            const devices = await window.HorizonRedirSDK.enumerateDevices();
+            if (devices.length) {
+               loadIframe();
+               window.HorizonRedirSDK.deinitSession();
+            }
+            break;
+         case 'vdiClientDisconnected':
+            break;
+         default:
+            console.log('===> get unknown event from WebRTCRedirSDK: ' + JSON.stringify(evt));
+      }
+   }
+
+   let status = new HorizonConnect();
+   status.startConnectToHorizonAgent().then(clientId => {
+      status.startConnectToClient(hcEventCallback);
+   }).catch(error => {
+   });
+
+   </script>
+</body>
+</html>

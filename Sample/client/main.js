@@ -9,7 +9,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const os = require('os');
 const regedit = require('regedit');
-const taskList = require('tasklist');
+const taskList = async (...args) => (await import('tasklist')).tasklist(...args);
 const fs = require('fs');
 regedit.setExternalVBSLocation('regedit/vbs');
 
@@ -128,12 +128,12 @@ ipcMain.on("toMain", (event, args) => {
 
 const getWssPortHelper = function(portRegPath) {
    let p = new Promise(function(resolve, reject) {
-      console.log('getWssPortHelper start to get wssport from root:' + portRegPath);
+      // console.log('getWssPortHelper start to get wssport from root:' + portRegPath);
       let regPath = portRegPath ? portRegPath : gWssPortRegistryPath;
       let wssPortRegistryPath = regPath + sessionId.toString();
       regedit.list(wssPortRegistryPath, function(err, result) {
          if (result && (result[wssPortRegistryPath] && result[wssPortRegistryPath].exists)) {
-            console.log(`getWssPortHelper get wssport:${wssPortRegistryPath} value:${JSON.stringify(result[wssPortRegistryPath])}`);
+            // console.log(`getWssPortHelper get wssport:${wssPortRegistryPath} value:${JSON.stringify(result[wssPortRegistryPath])}`);
             resolve(result[wssPortRegistryPath].values);
          } else {
             console.log('getWssPortHelper failed to get wssport:' + wssPortRegistryPath);

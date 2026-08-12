@@ -477,7 +477,6 @@ UI.updateUIStatus = function(id) {
    let audioOutputSelect = document.getElementById('audioOutputList' + id);
    let videoCheck = document.getElementById('videoInputCheckList' + id);
    let videoSelect = document.getElementById('videoInputList' + id);
-   let device_button = document.get
 
    let getdevice_button = document.getElementById('getdevice' + id);
    let getSelfView_button = document.getElementById('getSelfView' + id);
@@ -733,15 +732,54 @@ UI.setSelfView = async function(id, deviceId, ensureVideo) {
 
    let container = document.getElementById('selfViewWrapper' + id);
    let video = UI.WebRTCRedirApp.selfViewVideo[id];
+   if (video) {
+      UI.WebRTCRedirApp.HorizonRedirSDK.onVideoDisposed(video);
+      video.srcObject = null;
+   }
+   let windowRef;
+   if (window.getWindowReference) {
+      windowRef = await window.getWindowReference();
+   }
    if (videoStream) {
       Utils.log('UI', 'video_' + id + "is set to use deviceId " + deviceId);
       if (!video) {
          // Create video element
          video = document.createElement('video');
-         let windowRef = await window.getWindowReference();
          UI.WebRTCRedirApp.HorizonRedirSDK.onVideoCreated(video, windowRef);
+
          container.appendChild(video);
          video.autoplay = true;
+
+         container.style.position = 'relative';
+         let label = document.createElement('div');
+         label.id = "selfViewLabel" + id;
+         label.innerText = document.getElementById("userName").value;
+         label.style.position = 'absolute';
+         label.style.bottom = '0px';
+         label.style.left = '0px';
+         label.style.color = 'white';
+         label.style.zIndex = '100';
+         container.appendChild(label);
+
+         video.label = label;
+         video.rect = video.getBoundingClientRect();
+         video.changed = (force) => {
+            let r = video.getBoundingClientRect();
+            if (force || video.rect.x !== r.x || video.rect.y !== r.y || video.rect.width !== r.width || video.rect.height !== r.height) {
+               // video size changed or force
+               video.rect = r;
+               // Update the clip region for the label.
+               if (video.clipRect) {
+                  UI.WebRTCRedirApp.HorizonRedirSDK.setVideoClipRegion(false/*remove*/, video.clipRect, windowRef);
+               }
+               let labelRect = video.label.getBoundingClientRect();
+               video.clipRect = UI.WebRTCRedirApp.HorizonRedirSDK.frameRectToWindow(labelRect);
+               UI.WebRTCRedirApp.HorizonRedirSDK.setVideoClipRegion(true/*add*/, video.clipRect, windowRef);
+            }
+         };
+         video.observer = setInterval(() => {
+            video.changed(false);
+         }, 500);
          video.style.objectFit = "cover";
          video.style.width = "160px";
          video.style.height = "90px";
@@ -761,7 +799,19 @@ UI.setSelfView = async function(id, deviceId, ensureVideo) {
    } else {
       Utils.log('UI', 'video_' + id + "preview gets reset");
       if (video) {
+         if (video.clipRect) {
+            if (windowRef) {
+               UI.WebRTCRedirApp.HorizonRedirSDK.setVideoClipRegion(false, video.clipRect, windowRef);
+            }
+            video.clipRect = undefined;
+         }
+         if (video.observer) {
+            clearInterval(video.observer);
+         }
          container.removeChild(video);
+         if (video.label) {
+            container.removeChild(video.label);
+         }
          video.srcObject = undefined;
          video = undefined;
       }
@@ -807,7 +857,7 @@ UI.onCallStarted = function(id) {
    this.updateUIStatus(id);
 }
 
-UI.onCallEnded = function(id) {
+UI.onCallEnded = async function(id) {
    this.updateUIStatus(id);
 
    document.getElementById("remoteMediaStatus" + id).style.display = "none";
@@ -818,16 +868,25 @@ UI.onCallEnded = function(id) {
       const remoteShareVideoElement = document.getElementById("remoteShareVideo" + id);
       if (remoteShareVideoElement) {
          document.getElementById("remoteVideoWrapper" + id).removeChild(remoteShareVideoElement);
-         document.getElementById("miniRemoteVideoWrapper" + id).removeChild(document.getElementById("remoteVideo" + id));
-      } else {
-         document.getElementById("remoteVideoWrapper" + id).removeChild(document.getElementById("remoteVideo" + id));
+         UI.WebRTCRedirApp.HorizonRedirSDK.onVideoDisposed(remoteShareVideoElement);
+         remoteShareVideoElement.srcObject = null;
+      }
+      
+      let remoteVideo = document.getElementById("remoteVideo" + id);
+      if (remoteVideo) {
+         document.getElementById("remoteVideoWrapper" + id).removeChild(remoteVideo);
+         UI.WebRTCRedirApp.HorizonRedirSDK.onVideoDisposed(remoteVideo);
+         remoteVideo.srcObject = null;
       }
    } catch(e) {
       Utils.log("UI", "no video to remove");
    }
 
    try {
-      document.getElementById("remoteVideoWrapper" + id).removeChild(document.getElementById("remoteAudioElement" + id));
+      const remoteAudio = document.getElementById("remoteAudioElement" + id);
+      let hwnd = await window.getWindowReference();
+      UI.WebRTCRedirApp.HorizonRedirSDK.onAudioDisposed(remoteAudio, hwnd);
+      document.getElementById("remoteVideoWrapper" + id).removeChild(remoteAudio);
    } catch(e) {
       Utils.log("UI", "no remote audio element to remove");
    }
@@ -897,7 +956,6 @@ UI.onCallConnected = function(id) {
 UI.onRemoteVideoStream = async function(videoStream, id) {
    let remoteVideo = document.createElement('video');
    remoteVideo.id = "remoteVideo" + id;
-
    if (UI.WebRTCRedirApp.isAgentConnected) {
       let hwnd = await window.getWindowReference();
       UI.WebRTCRedirApp.HorizonRedirSDK.onVideoCreated(remoteVideo, hwnd);
@@ -993,6 +1051,14 @@ UI.addUpToCall = function(x) {
    while(!this.callUI[x]) {
       UI.addCall();
    }
+};
+
+UI.onFrameChanged = function() {
+   UI.WebRTCRedirApp.selfViewVideo.forEach((video, id) => {
+      if (video && video.changed) {
+         video.changed(true/*force*/);
+      }
+   });
 };
 
 export default UI;

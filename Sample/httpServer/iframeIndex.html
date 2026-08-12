@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horizon Webrtc Sample - iFrame </title>
+    <title>Horizon Webrtc Sample - Dynamic iFrame</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,12 +11,34 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 120px;
+        }
+        .control-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #333;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100%;
         }
         button {
             padding: 10px 20px;
@@ -25,41 +47,290 @@
             color: white;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
         }
         button:hover {
             background-color: #0056b3;
         }
+        .iframe-container {
+            position: relative;
+            min-width: 100%;
+            min-height: calc(100vh - 200px);
+            border: 2px dashed #ccc;
+            background-color: #fafafa;
+            overflow: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
         iframe {
-            width: 100%;
-            height: 80vh;
-            border: 1px solid #ccc;
-            margin-top: 10px;
+            position: absolute;
+            border: 0px solid #007BFF;
+            background-color: white;
+        }
+        .position-indicator {
+            position: absolute;
+            background-color: rgba(255, 0, 0, 0.3);
+            border: 1px solid red;
+            pointer-events: none;
+            font-size: 10px;
+            color: red;
+            padding: 2px;
+        }
+        .info-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
         }
     </style>
 </head>
 <body>
-    <input type="text" id="urlInput" value="https://jvc1:3000/webIndex.html?callServerUrl=wss://jvc1:8443">
-    <button onclick="loadIframe()">Load</button>
-    <iframe id="displayFrame"></iframe>
+    <div class="controls">
+        <div class="control-group">
+            <label for="urlInput">URL:</label>
+            <input type="text" id="urlInput" value="https://jvc1:3000/webIndex.html?callServerUrl=wss://jvc1:8443">
+        </div>
+        
+        <div class="control-group">
+            <label for="leftInput">Left (px):</label>
+            <input type="number" id="leftInput" value="50" min="0" max="1000">
+        </div>
+        
+        <div class="control-group">
+            <label for="topInput">Top (px):</label>
+            <input type="number" id="topInput" value="50" min="0" max="1000">
+        </div>
+        
+        <div class="control-group">
+            <label for="widthInput">Width (%):</label>
+            <input type="number" id="widthInput" value="90" min="10" max="100" step="1">
+        </div>
+        
+        <div class="control-group">
+            <label for="heightInput">Height (%):</label>
+            <input type="number" id="heightInput" value="90" min="10" max="100" step="1">
+        </div>
+        
+        <div class="control-group">
+            <label for="widthSlider">Width Slider:</label>
+            <input type="range" id="widthSlider" min="10" max="100" value="90" step="1">
+            <span id="widthValue">90%</span>
+        </div>
+        
+        <div class="control-group">
+            <button onclick="loadIframe()">Load</button>
+            <button onclick="applyPosition()">Apply Position</button>
+            <button onclick="resetPosition()">Reset</button>
+        </div>
+    </div>
+
+    <div class="iframe-container" id="container">
+        <iframe id="displayFrame"></iframe>
+        <div class="position-indicator" id="positionIndicator">Position: (0, 0)</div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <div><strong>Frame Info:</strong></div>
+        <div id="frameInfo">No frame loaded</div>
+    </div>
 
     <script>
-      let iframe;
+      let _iframe;
+      let _iframePoll;
+      let _iframeInfo;
+      
       function loadIframe() {
          const url = document.getElementById('urlInput').value;
-         iframe = document.getElementById('displayFrame');
-         iframe.onload = () => {
+         _iframe = document.getElementById('displayFrame');
+         _iframe.onload = () => {
             console.log('iframe loaded');
+            applyPosition();
          }
-         iframe.src = url;
+         _iframe.onerror = () => {
+            console.error('Failed to load iframe:', url);
+         }
+         _iframe.src = url;
       }
 
-      window.onload = loadIframe;
+      function applyPosition() {
+         if (!_iframe) {
+            return;
+         }
+
+         const container = document.getElementById('container');
+         container.style.width = '100%';
+         container.style.height = '100%';
+         
+         const left = parseInt(document.getElementById('leftInput').value) || 0;
+         const top = parseInt(document.getElementById('topInput').value) || 0;
+         const widthPercent = parseInt(document.getElementById('widthInput').value) || 90;
+         const heightPercent = parseInt(document.getElementById('heightInput').value) || 90;
+         
+         _iframe.style.left = left + 'px';
+         _iframe.style.top = top + 'px';
+         _iframe.style.width = widthPercent + '%';
+         _iframe.style.height = heightPercent + '%';
+         
+         updatePositionIndicator(left, top);
+         updateInfoPanel();
+      }
+
+      function updatePositionIndicator(left, top) {
+         const indicator = document.getElementById('positionIndicator');
+         indicator.style.left = (left + 5) + 'px';
+         indicator.style.top = (top - 20) + 'px';
+         indicator.textContent = `Position: (${left}, ${top})`;
+      }
+
+      function updateInfoPanel() {
+         if (!_iframe) return;
+         
+         const rect = _iframe.getBoundingClientRect();
+         const container = document.getElementById('container');
+         const containerRect = container.getBoundingClientRect();
+         
+         const relativeLeft = rect.left - containerRect.left;
+         const relativeTop = rect.top - containerRect.top;
+         
+         // Calculate percentage values based on container content area
+         const padding = 20;
+         const contentWidth = containerRect.width - (padding * 2);
+         const contentHeight = containerRect.height - (padding * 2);
+         const widthPercent = (rect.width / contentWidth * 100).toFixed(1);
+         const heightPercent = (rect.height / contentHeight * 100).toFixed(1);
+         
+         const info = document.getElementById('frameInfo');
+         info.innerHTML = `
+            <div><strong>iFrame:</strong></div>
+            <div>Left: ${Math.round(relativeLeft)}px</div>
+            <div>Top: ${Math.round(relativeTop)}px</div>
+            <div>Width: ${Math.round(rect.width)}px (${widthPercent}%)</div>
+            <div>Height: ${Math.round(rect.height)}px (${heightPercent}%)</div>
+            <div>Right: ${Math.round(rect.right - containerRect.left)}px</div>
+            <div>Bottom: ${Math.round(rect.bottom - containerRect.top)}px</div>
+            <div><strong>Container:</strong></div>
+            <div>Width: ${Math.round(containerRect.width)}px</div>
+            <div>Height: ${Math.round(containerRect.height)}px</div>
+            <div>Content: ${Math.round(contentWidth)}px × ${Math.round(contentHeight)}px</div>
+         `;
+      }
+
+      function resetPosition() {
+         document.getElementById('leftInput').value = 50;
+         document.getElementById('topInput').value = 50;
+         document.getElementById('widthInput').value = 90;
+         document.getElementById('heightInput').value = 90;
+         document.getElementById('widthSlider').value = 90;
+         document.getElementById('widthValue').textContent = '90%';
+         applyPosition();
+      }
+
+
+      function startIframePoll() {
+         stopIframePoll();
+         updateIframe();
+         _iframePoll = setInterval(function(){
+            updateIframe();
+         }, 500);
+      }
+
+      function stopIframePoll() {
+         if (_iframePoll) {
+            clearInterval(_iframePoll);
+            _iframePoll = undefined;
+         }
+         _iframeInfo = undefined;
+      }
+
+      function updateIframe() {
+         /*
+          * This assumes the iframe border width is 0. For non-zero iframe border width
+          * Please adjust frameRect to match the real offset.
+          */
+         let frameRect = _iframe ? _iframe.getBoundingClientRect() : undefined;
+         if (frameRect === undefined ||
+            (_iframeInfo !== undefined && _iframeInfo.left === frameRect.left
+             && _iframeInfo.top === frameRect.top
+             && _iframeInfo.right === frameRect.right
+             && _iframeInfo.bottom === frameRect.bottom)) {
+            return;
+         }
+         
+         _iframeInfo = {
+            left: frameRect.left,
+            top: frameRect.top,
+            right: frameRect.right,
+            bottom: frameRect.bottom,
+            width: frameRect.width,
+            height: frameRect.height
+         };
+
+         // Get zoom factor
+         const borderWidth = 8;
+         const hostWindow = document.defaultView;
+         const { innerWidth, outerWidth } = hostWindow;
+         let zf = ((outerWidth - borderWidth) / innerWidth) * 100;
+         let stockedZoomFactor = getBrowserStockedZoomFactor(zf);
+         let browserZoomFactor = Math.round(stockedZoomFactor ? stockedZoomFactor : zf) / 100;
+         _iframeInfo.zoomFactor = browserZoomFactor;
+         _iframe.contentWindow.postMessage({ cmd: 'updateFrameInfo', frameInfo: _iframeInfo });
+         
+         // Update info panel
+         updateInfoPanel();
+      }
+
+      function getBrowserStockedZoomFactor(zf) {
+         var browserZooms = [25, 33, 50, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400, 500];
+         for (var i = 0; i < browserZooms.length; i++) {
+            let bz = browserZooms[i];
+            let error = bz * 0.05;
+            if (Math.abs(bz - zf) < error) {
+               return bz;
+            }
+         }
+      }
+
+      // Event listeners
+      document.getElementById('leftInput').addEventListener('input', applyPosition);
+      document.getElementById('topInput').addEventListener('input', applyPosition);
+      document.getElementById('widthInput').addEventListener('input', function() {
+         document.getElementById('widthSlider').value = this.value;
+         document.getElementById('widthValue').textContent = this.value + '%';
+         applyPosition();
+      });
+      document.getElementById('heightInput').addEventListener('input', applyPosition);
+      
+      document.getElementById('widthSlider').addEventListener('input', function() {
+         document.getElementById('widthInput').value = this.value;
+         document.getElementById('widthValue').textContent = this.value + '%';
+         applyPosition();
+      });
+
+      window.onload = function() {
+         loadIframe();
+      };
+      
       window.onmessage = function(e) {
-      if (iframe && e.data.from === 'horizon-iframe' && e.data.cmd === 'getHorizonWindowTitle') {
-         iframe.contentWindow.postMessage({ topFrameTitle: document.title} , '*');
-      }
+         // Validate message structure
+         if (!e.data || typeof e.data !== 'object') {
+            return;
+         }
+         if (_iframe && e.data.from === 'horizon-iframe' && e.data.cmd === 'getHorizonWindowTitle') {
+            _iframe.contentWindow.postMessage({ topFrameTitle: document.title} , '*');
+            startIframePoll();
+         }
       }
 
+      // Initialize position on page load
+      window.addEventListener('load', function() {
+         setTimeout(applyPosition, 100);
+      });
     </script>
 </body>
 </html>

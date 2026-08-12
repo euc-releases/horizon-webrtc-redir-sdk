@@ -36,18 +36,25 @@ const spliceSDP = function(origSDP) {
       } else if (line.indexOf("m=") === 0 && line.includes("video")) {
          audTrue = false;
       } else if (line.indexOf("a=") === 0 && line.includes("msid:")) {
-         var ret = "";
          const index = line.indexOf("msid:");
+         const msidValue = line.substring(index + 5);
 
-         var beforeSubstring = line.substring(0, index + 5);
-         var afterSubstring = line.substring(index + 7);
+         // Only fabricate a stream name when msid uses the "no stream"
+         // placeholder ("msid:- <trackId>"). If the SDP already carries a
+         // real stream id (e.g. "msid:162_f0_lmsV_3 <trackId>"), leave the
+         // line untouched.
+         if (msidValue.indexOf("- ") === 0) {
+            var ret = "";
+            var beforeSubstring = line.substring(0, index + 5);
+            var afterSubstring = line.substring(index + 7);
 
-         if (audTrue) { 
-            ret = beforeSubstring + audLine + afterSubstring;
-         } else {
-            ret = beforeSubstring + vidLine + afterSubstring;
+            if (audTrue) { 
+               ret = beforeSubstring + audLine + afterSubstring;
+            } else {
+               ret = beforeSubstring + vidLine + afterSubstring;
+            }
+            lines[i] = ret;
          }
-         lines[i] = ret;
       }
    }
 
@@ -118,22 +125,33 @@ CallMgr.makeCall = async function (calleeId, id) {
    };
    CallMgr.calls[id].callInfo = callInfo;
 
-   let _pc = CallMgr.createPeerConnection(id);
-
-   const audioTransceiver = _pc.addTransceiver("audio", { direction: 'inactive' });
-   const videoTransceiver = _pc.addTransceiver("video", { direction: 'inactive' });
-
-   CallMgr.calls[id].audioTransceiver = audioTransceiver;
-   CallMgr.calls[id].videoTransceiver = videoTransceiver;
-
    let audio_device = this.ui.currentSelectedAudioInput(id);
-   let audioConstraint = audio_device ? { audio: { deviceId : audio_device}, video : false } : undefined;
+   let audioConstraint = audio_device ? { audio: {
+      deviceId : {exact: audio_device} }, video : false  } : undefined;
 
    let video_device = this.ui.currentSelectedVideoInput(id);
    let videoConstraint = video_device ? { audio: false, video : { deviceId : video_device } } : undefined;
 
    let _audioMediaStream = await CallMgr.getUserMedia(id, audioConstraint);
    let _videoMediaStream = await CallMgr.getUserMedia(id, videoConstraint);
+
+   let _pc = CallMgr.createPeerConnection(id);
+
+   // Pass the local streams so that addTransceiverImplV1's init.streams
+   // handling (the code path that had the streamIds declaration bug) gets
+   // exercised, to verify that fix.
+   const useInitStream = true;
+   const audioTransceiver = _pc.addTransceiver("audio", {
+      direction: 'inactive',
+      streams: useInitStream && _audioMediaStream ? [_audioMediaStream] : undefined
+   });
+   const videoTransceiver = _pc.addTransceiver("video", {
+      direction: 'inactive',
+      streams: useInitStream && _videoMediaStream ? [_videoMediaStream] : undefined
+   });
+
+   CallMgr.calls[id].audioTransceiver = audioTransceiver;
+   CallMgr.calls[id].videoTransceiver = videoTransceiver;
 
    CallMgr.calls[id].audioStream = _audioMediaStream;
    CallMgr.calls[id].videoStream = _videoMediaStream;
@@ -151,6 +169,16 @@ CallMgr.makeCall = async function (calleeId, id) {
    if (videoTrack) {
       videoTrack.enabled = true;
       videoTransceiver.sender.replaceTrack(videoTrack);
+      /*
+       * Example code to set constraints and get capabilities
+       *  await videoTrack.applyConstraints({width:640, height:360, frameRate:30});
+       *  let constraint = videoTrack.getConstraints();
+       *  let sender_caps;
+       *  let receiver_caps;
+       *  sender_caps = videoTransceiver.sender.getCapabilities('video');
+       *  receiver_caps = videoTransceiver.receiver.getCapabilities('video');
+       *  receiver_caps = CallMgr.SDK.getReceiverCapabilities('video');
+       */
    } else {
       videoTransceiver.sender.replaceTrack(null);
    }
@@ -681,7 +709,8 @@ CallMgr.createPeerConnection = function(id) {
              "turns:ws-turn2.xirsys.com:443?transport=tcp",
              "turns:ws-turn2.xirsys.com:5349?transport=tcp"
          ]
-      }]
+      }],
+      sdpSemantics: "unified-plan"
    };
    let callConfig = CallMgr.SDK.getCallConfig(id);
    if (CallMgr.app.isAgentConnected) {
@@ -716,8 +745,10 @@ CallMgr.createPeerConnection = function(id) {
          CallMgr.log("peerconnect ontrack received audio transceiver");
       }
       CallMgr.getStatPoll = setInterval(function(){
-         pc.getStats()
-      }, 10000)
+         pc.getStats().then(reports => {
+            // Do nothing now.
+         });
+      }, 1000);
    };
 
    pc.onaddstream = function(event) {

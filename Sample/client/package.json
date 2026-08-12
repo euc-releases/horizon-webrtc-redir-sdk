@@ -40,20 +40,29 @@
    },
    "author": "Benrui She",
    "license": "ISC",
+   "overrides": {
+      "tar": "^7.5.22",
+      "@electron/node-gyp": {
+         "tar": "^7.5.22"
+      },
+      "@electron/rebuild": {
+         "tar": "^7.5.22"
+      }
+   },
    "devDependencies": {
-      "@electron-forge/cli": "^6.0.0-beta.61",
-      "@electron-forge/maker-deb": "^6.0.0-beta.61",
-      "@electron-forge/maker-rpm": "^6.0.0-beta.61",
-      "@electron-forge/maker-squirrel": "^6.0.0-beta.61",
-      "@electron-forge/maker-zip": "^6.0.0-beta.61",
-      "electron": "15.1.2",
-      "electron-builder": "^23.1.0"
+      "@electron-forge/cli": "^7.11.2",
+      "@electron-forge/maker-deb": "^7.11.2",
+      "@electron-forge/maker-rpm": "^7.11.2",
+      "@electron-forge/maker-squirrel": "^7.11.2",
+      "@electron-forge/maker-zip": "^7.11.2",
+	   "electron": ">=39.8.1",
+      "electron-builder": "^26.15.7"
    },
    "dependencies": {
-      "electron-squirrel-startup": "^1.0.0",
-      "express": "^4.17.2",
-      "regedit": "^5.0.0",
-      "tasklist": "3.1.1"
+      "electron-squirrel-startup": "^1.0.1",
+      "express": "^5.2.1",
+      "regedit": "^5.1.4",
+      "tasklist": "^6.0.0"
    },
    "config": {
       "forge": {

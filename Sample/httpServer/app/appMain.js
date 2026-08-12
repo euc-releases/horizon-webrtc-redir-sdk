@@ -11,9 +11,17 @@ var Demo = Demo || function() {
    var WebRTCRedirApp = {};
    var wssPortNumber;
    var clientID;
-   var maxNumOfCallConfigs = 3;
+   var maxNumOfCallConfigs;
    var isWindowMaximized = false;
    var topFrameTitle;
+   var logToConsole = function(msg) { console.log(msg); };
+
+   const Logger = {
+      error: logToConsole,
+      debug: logToConsole,
+      info: logToConsole,
+      warn: logToConsole,
+   };
 
    const HorizonAgentEventCallback = function(evt) {
       let event = evt.event;
@@ -203,6 +211,11 @@ var Demo = Demo || function() {
          if (e.data && e.data.topFrameTitle) {
             topFrameTitle = e.data.topFrameTitle;
          }
+         if (e.data && e.data.cmd === 'updateFrameInfo') {
+            window.WebRTCRedirApp.HorizonRedirSDK.onFrameChanged(e.data.frameInfo);
+            UI.onFrameChanged(); // trigger new calculation of self view video clip region
+         }
+
       }
 
 
@@ -239,9 +252,21 @@ var Demo = Demo || function() {
 
       // Poll websocket and initSDK
       let sdkConfig;
-      // Pass browser type, maxNumOfCallConfigs to sdkConfig e.g
-      sdkConfig = { numOfCallConfigs: maxNumOfCallConfigs };
-      WebRTCRedirApp.HorizonRedirSDK.initSDK({}, "Horizon Electron Sample App",
+      /*
+       * Available options
+       * numOfCallConfigs: number. default is 1.
+       * allowNullHandle: false/true - default is false.
+       * h264DecoderProfileScope: 0(undefined), 1 (encoder), 2(decoder) default is 2.
+       * requiredAPIs: object - default is undefined.
+       * simpleDisconnectOnError: false/true - default is false
+*        */
+      sdkConfig = { };
+      let params = new URLSearchParams(window.location.search);
+      sdkConfig.allowNullHandle = params.get('allowNullHandle');
+      // Example for requiredAPIs and simpleDisconnectOnError
+      // sdkConfig.requiredAPIs = {iframeVideo: 1, senderGetStats:1};
+      // sdkConfig.simpleDisconnectOnError = true;
+      WebRTCRedirApp.HorizonRedirSDK.initSDK(Logger, "Horizon Electron Sample App",
          HorizonAgentEventCallback, sdkConfig);
       return WebRTCRedirApp;
    }

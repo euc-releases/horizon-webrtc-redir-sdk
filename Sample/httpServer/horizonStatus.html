@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon WebRTC SDK Troubleshooting</title>
+    <style>
+        body {
+            background: #f7f9fa;
+            /*font-family: 'Segoe UI', Arial, sans-serif;*/
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            /*max-width: 1200px;*/
+            min-width: 320px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 32px 28px 24px 28px;
+        }
+        .title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #4682b4;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+            text-align: left;
+        }
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 22px;
+        }
+        .item-checkbox {
+            margin-right: 14px;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .item-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .item-label {
+            font-size: 1.08em;
+            font-weight: 500;
+            color: #222;
+            margin-bottom: 6px;
+        }
+        .item-desc {
+            color: #555;
+            font-size: 1em;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px 14px;
+            border: 1px solid #e0e0e0;
+            min-height: 32px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .footer {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 0.95em;
+            color: #aaa;
+        }
+        .bullet-list {
+            margin: 8px 0 0 18px;
+            padding: 0;
+            list-style-type: square;
+        }
+        .registry-section {
+            margin: 8px 0 8px 0;
+            padding: 8px;
+            background: #f0f4fa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Horizon WebRTC SDK Checklist</div>
+        <ul class="item-list">
+            <li class="item" id="haStatus" >
+                <div class="item-content">
+                    <label class="item-label" id="haStatusLabel">Check Horizon Agent Status</label>
+                    <div class="item-desc" id="haStatusComments"></div>
+                </div>
+            </li>
+            <li class="item" id="hcStatus" style="display:none;">
+                <div class="item-content">
+                    <label class="item-label" id="hcStatusLabel">Horizon Client WebRTC SDK Connection Status</label>
+                    <div class="item-desc" id="hcStatusComments"></div>
+                </div>
+            </li>
+            <!-- Add more items here as needed -->
+        </ul>
+        <div class="footer">
+            <!--&copy; 2025 Omnissa, LLC. All rights reserved.-->
+        </div>
+    </div>
+
+    <script src="sdk/HorizonWebRTCExtension.js"></script>
+    <script src="sdk/HorizonSDKforWebRTCRedir.js" > </script>
+    <script>
+      var _haStatusLabel = document.getElementById('haStatusLabel');
+      var _haStatusComment = document.getElementById('haStatusComments');
+      var _hcStatusLabel = document.getElementById('hcStatusLabel');
+      var _hcStatusComment = document.getElementById('hcStatusComments');
+
+      var makeSucceeded = function(strVal) {
+         return '✅ ' +  strVal;
+      }
+
+      var makeFailed = function(strVal) {
+         return '❌ ' + strVal;
+      }
+
+      function isChrome() {
+         return /Chrome/.test(navigator.userAgent) && !/Edge|Edg\//.test(navigator.userAgent);
+      }
+
+      function isEdge() {
+         return /Edg\//.test(navigator.userAgent);
+      }
+
+      var makeHAFailureReasons = function() {
+         let site = document.location.origin + '/*';
+         let browser = 'Chrome';
+         let chromeStore = 'https://chromewebstore.google.com/detail/horizon-webrtc-web-app-su/emildoafpcgihdmhphelfhghioccllfi';
+         let edgeStore = 'https://microsoftedge.microsoft.com/addons/detail/horizon-webrtc-web-app-su/mjhidmcjbopoldpjjgbcikngbmggoljf';
+         if (isChrome()) {
+            browser = 'Chrome';
+         } else if(isEdge()) {
+            // Pending Edge store, use chrome store instead.
+            browser = 'Edge';
+         }
+         let haConfigLink = 'https://github.com/euc-releases/horizon-webrtc-redir-sdk/tree/main/Sample#configure-web-client-and-run';
+         return `
+            <div>Possible reasons are listed below:</div>
+            <ul class="bullet-list"">
+               <li>
+                  The browser extension 'Horizon WebRTC Web App Support' needs to be installed.
+                  <div class="registry-section">
+                     You can download the Chrome extension
+                     <a href="${chromeStore}" target="_blank" style="color:#4682b4;text-decoration:underline;">here</a>
+                     and the Edge extension 
+                     <a href="${edgeStore}" target="_blank" style="color:#4682b4;text-decoration:underline;">here</a>
+                     (For Horizon Agent versions older than 8.17, only the Chrome extension is supported)                     
+                  </div>
+                  
+               </li>
+               <li>
+                  The Policy "Omnissa Horizon WebRTC Redirection SDK Web App Support" and ${browser} browser needs to be enabled
+                  <div class="registry-section">
+                     <strong>Sample Registry Configuration:</strong><br>
+                     Key Path: HKLM\\SOFTWARE\\Policies\\Omnissa\\Horizon\\WebRTCRedirSDKWebApp<br>
+                     Value Name: enabled, chrome_enabled, edge_chrome_enabled<br>
+                     Value: 1 (REG_DWORD)
+                  </div>
+               </li>
+               <li>
+                  The site ${site} needs to be included in the allowed list (Restart the browser after changing the allowed list)
+                  <div class="registry-section">
+                     <strong>Sample Registry Configuration:</strong><br>
+                     Key Path: HKLM\\SOFTWARE\\Policies\\Omnissa\\Horizon\\WebRTCRedirSDKWebApp\\UrlAllowList<br>
+                     Value Name: ${site}<br>
+                     Value:
+                  </div>
+               </li>
+            </ul>
+         `;
+      }
+
+      var makeHCComment = function(evt) {
+         let version = evt?.version;
+         if (!version) {
+            return "";
+         }
+         let lists="";
+         let keys = Object.keys(version);
+         keys.forEach(function(k){
+            let item = `<li>${k}:${version[k]}</li>`;
+            lists += item;
+         })
+         return `
+            <div>Connection Properties:</div>
+            <ul class="bullet-list">
+               ${lists}
+            </ul>
+         `;
+      }
+
+      var makeHCFailureReasons = function() {
+         let site = document.origin + '/*';
+         return `
+            <div>Possible reasons are listed as below:</div>
+            <ul class="bullet-list">
+            </ul>
+         `;         
+      }
+
+      // Function to show or hide a list item by id
+      function showItem(itemId, visible) {
+          var item = document.getElementById(itemId);
+          if (item) {
+              item.style.display = visible ? '' : 'none';
+          }
+      }
+
+      var HorizonConnect = function () {
+         var _pollInterval;
+         var _pollLimit = 10;
+
+         var startConnectToHorizonAgent = function () {
+            return new Promise(function (resolve, reject) {
+               if (!window.HorizonWebRTCExtension || !window.HorizonWebRTCExtension.getHorizonClientID) {
+                  reject('Horizon extension is not found');
+                  return;
+               }
+               _pollInterval = setInterval(function() {
+                  pollHorizonClientId(resolve, reject);
+                  _pollLimit--;
+               }, 500);
+            });
+         }
+         var pollHorizonClientId = function (resolve, reject) {
+            window.HorizonWebRTCExtension.getHorizonClientID().then(clientId => {
+               resolve(clientId);
+               clearInterval(_pollInterval);
+            }).catch(error => {
+               if (_pollLimit <= 0) {
+                  reject('Poll limit reached.')
+                  clearInterval(_pollInterval);
+               }
+            })
+         }
+         var startConnectToClient = function(callback) {
+            window.getHorizonClientID = async () => {
+               if (window.HorizonWebRTCExtension) {
+                  return window.HorizonWebRTCExtension.getHorizonClientID();
+               } else {
+                  return Promise.reject('Fail to get horizon client ID');
+               }
+            };
+
+            window.getHorizonWSSPort = async () => {
+               if (window.HorizonWebRTCExtension) {
+                  return window.HorizonWebRTCExtension.getHorizonWSSPort();
+               } else {
+                  return Promise.reject('Fail to get horizon WSS port');
+               }
+            };
+
+            window.getHorizonWindowTitle = function () {
+               return document.title;
+            }
+
+            window.HorizonRedirSDK = window.HorizonWebRtcRedirectionAPI;   // Creates alias.
+            window.HorizonRedirSDK.initSDK(null, "", callback);
+         }
+
+         // Exposes methods.
+         this.startConnectToHorizonAgent = startConnectToHorizonAgent;
+         this.startConnectToClient = startConnectToClient;
+      }
+
+      var hcEventCallback = function(evt) {
+         let event = evt?.event;
+         if (!event) {
+            _hcStatusLabel.innerHTML = makeFailed('Received unsupported event');
+            return;
+         }
+         
+         console.log('===> get event from WebRTCRedirSDK: ' + event);
+         switch(event) {
+            case 'vdiClientConnected':
+               _hcStatusLabel.innerHTML = makeSucceeded('WebRTC SDK is supported by the client');
+               _hcStatusComment.innerHTML = makeHCComment(evt);
+               break;
+            case 'vdiClientDisconnected':
+               _hcStatusLabel.innerHTML = makeFailed('WebRTC SDK is not supported by the client');
+               break;
+            default:
+               console.log('===> get unknow event from WebRTCRedirSDK: ' + JSON.stringify(evt));
+         }
+      }
+
+      let status = new HorizonConnect();
+      status.startConnectToHorizonAgent().then(clientId => {
+         _haStatusLabel.innerHTML = makeSucceeded('Horizon agent detected');
+         _haStatusComment.innerHTML = 'Horizon agent is active and the client ID was retrieved successfully.';
+         showItem('hcStatus', true);
+         status.startConnectToClient(hcEventCallback);
+      }).catch(error => {
+         _haStatusLabel.innerHTML = makeFailed('Horizon agent is not detected');
+         _haStatusComment.innerHTML = makeHAFailureReasons();
+      });
+
+    </script>
+</body>
+</html>
